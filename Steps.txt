@@ -1,0 +1,46 @@
+--Create Folder Structure
+
+#dbutils.fs.mkdirs('/FileStore/tables/Project/Source')
+#dbutils.fs.mkdirs('/FileStore/tables/Project/Dest')
+dbutils.fs.rm('/FileStore/tables/Project/',True)
+
+--Load Csv file
+
+Orders_data = spark.read.csv("/FileStore/tables/Project/Source/Orders.csv", header=True, inferSchema=True)
+order_items_data = spark.read.csv("/FileStore/tables/Project/Source/Order_Item.csv", header=True, inferSchema=True)
+products_data = spark.read.csv("/FileStore/tables/Project/Source/Products.csv", header=True, inferSchema=True)
+categories_data = spark.read.csv("/FileStore/tables/Project/Source/Categories.csv", header=True, inferSchema=True)
+
+Step 3 - Show/Verify Data
+
+
+
+Step 4 - Data Transformation (Multiple Joins)
+
+# Perform inner joins to consolidate sales data with product and category details
+
+from pyspark.sql.functions import col
+
+# Step 4: Data Transformation (Multiple Joins)
+# Perform inner joins to consolidate sales data with product and category details
+joined_data = (
+    Orders_data
+    .join(order_items_data, "order_id", "inner")
+    .join(products_data, "product_id", "inner")
+    .join(categories_data, "category_id", "inner")
+    .select(
+        col("order_id"),
+        col("customer_id"),
+        col("order_date"),
+        col("product_name"),
+        col("category_name"),
+        col("quantity"),
+        col("total_amount")
+    )
+)
+
+
+Step 5 - Load Data into Destination
+
+joined_data.write.csv("/FileStore/tables/Project/Dest/sales_report.csv", header=True, mode="overwrite")
+
